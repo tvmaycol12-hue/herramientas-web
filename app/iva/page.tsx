@@ -10,12 +10,16 @@ export default function IvaPage() {
   const [iva, setIva] = useState("19");
   const [copiado, setCopiado] = useState(false);
 
-  // Convierte valores como:
+  // Convierte números escritos en formato chileno:
   // 10.000 -> 10000
-  // 100.000 -> 100000
   // 1.500.000 -> 1500000
+  // 10000,50 -> 10000.50
+  // 10.000,50 -> 10000.50
   const convertirNumero = (valor: string) => {
-    const limpio = valor.replace(/\./g, "").replace(/,/g, ".");
+    if (!valor) return 0;
+
+    const limpio = valor.replace(/\./g, "").replace(",", ".");
+
     return Number(limpio);
   };
 
@@ -26,28 +30,30 @@ export default function IvaPage() {
   let montoIva = 0;
   let precioBase = 0;
 
-  if (
-    precio !== "" &&
-    !isNaN(precioNumero) &&
-    !isNaN(ivaNumero) &&
-    ivaNumero >= 0
-  ) {
-    if (modo === "agregar") {
-      precioBase = precioNumero;
-      montoIva = precioNumero * (ivaNumero / 100);
-      precioFinal = precioNumero + montoIva;
-    } else {
-      precioFinal = precioNumero;
-      precioBase = precioNumero / (1 + ivaNumero / 100);
-      montoIva = precioNumero - precioBase;
-    }
-  }
-
   const hayResultado =
     precio !== "" &&
     !isNaN(precioNumero) &&
     !isNaN(ivaNumero) &&
+    precioNumero >= 0 &&
     ivaNumero >= 0;
+
+  if (hayResultado) {
+    if (modo === "agregar") {
+      // Precio ingresado = precio SIN IVA
+      precioBase = precioNumero;
+
+      montoIva = precioNumero * (ivaNumero / 100);
+
+      precioFinal = precioNumero + montoIva;
+    } else {
+      // Precio ingresado = precio CON IVA
+      precioFinal = precioNumero;
+
+      precioBase = precioNumero / (1 + ivaNumero / 100);
+
+      montoIva = precioNumero - precioBase;
+    }
+  }
 
   const formatoPesos = (numero: number) => {
     return numero.toLocaleString("es-CL", {
@@ -59,15 +65,20 @@ export default function IvaPage() {
   const copiarResultado = async () => {
     if (!hayResultado) return;
 
-    await navigator.clipboard.writeText(
-      `$${formatoPesos(precioFinal)}`
-    );
+    try {
+      await navigator.clipboard.writeText(
+        `$${formatoPesos(precioFinal)}`
+      );
 
-    setCopiado(true);
+      setCopiado(true);
 
-    setTimeout(() => {
-      setCopiado(false);
-    }, 2000);
+      setTimeout(() => {
+        setCopiado(false);
+      }, 2000);
+    } catch {
+      // Si el navegador bloquea el portapapeles,
+      // no se rompe la calculadora.
+    }
   };
 
   const limpiar = () => {
@@ -76,12 +87,16 @@ export default function IvaPage() {
     setCopiado(false);
   };
 
+  const cambiarModo = (nuevoModo: Modo) => {
+    setModo(nuevoModo);
+    setCopiado(false);
+  };
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-
+      {/* HEADER */}
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
-
           <a
             href="/"
             className="text-xl font-bold tracking-tight"
@@ -95,14 +110,13 @@ export default function IvaPage() {
           >
             ← Inicio
           </a>
-
         </div>
       </header>
 
+      {/* CONTENIDO */}
       <div className="mx-auto max-w-3xl px-5 py-10">
-
+        {/* TÍTULO */}
         <div className="mb-8">
-
           <p className="mb-2 text-sm font-bold uppercase tracking-widest text-blue-600">
             CALCULADORA
           </p>
@@ -115,22 +129,18 @@ export default function IvaPage() {
             Calcula el IVA de un precio, obtén el precio final
             y descubre cuánto corresponde al impuesto.
           </p>
-
         </div>
 
+        {/* CALCULADORA */}
         <section className="rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
-
           <h2 className="text-xl font-bold">
             Calcula tu IVA
           </h2>
 
+          {/* MODOS */}
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-
             <button
-              onClick={() => {
-                setModo("agregar");
-                setCopiado(false);
-              }}
+              onClick={() => cambiarModo("agregar")}
               className={`rounded-xl border p-4 text-left transition ${
                 modo === "agregar"
                   ? "border-blue-500 bg-blue-50"
@@ -147,10 +157,7 @@ export default function IvaPage() {
             </button>
 
             <button
-              onClick={() => {
-                setModo("quitar");
-                setCopiado(false);
-              }}
+              onClick={() => cambiarModo("quitar")}
               className={`rounded-xl border p-4 text-left transition ${
                 modo === "quitar"
                   ? "border-blue-500 bg-blue-50"
@@ -165,11 +172,10 @@ export default function IvaPage() {
                 Precio con IVA → precio sin IVA
               </div>
             </button>
-
           </div>
 
+          {/* PRECIO */}
           <div className="mt-6">
-
             <label className="mb-2 block text-sm font-semibold">
               {modo === "agregar"
                 ? "Precio sin IVA"
@@ -177,7 +183,6 @@ export default function IvaPage() {
             </label>
 
             <div className="relative">
-
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-medium text-slate-500">
                 $
               </span>
@@ -189,6 +194,7 @@ export default function IvaPage() {
                 onChange={(e) => {
                   const valor = e.target.value;
 
+                  // Permite números, puntos y coma.
                   if (/^[0-9.,]*$/.test(valor)) {
                     setPrecio(valor);
                     setCopiado(false);
@@ -197,23 +203,20 @@ export default function IvaPage() {
                 placeholder="Ej: 10.000"
                 className="w-full rounded-xl border py-3 pl-9 pr-4 text-lg outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
-
             </div>
 
             <p className="mt-2 text-sm text-slate-500">
-              Puedes escribir valores como 10.000 o 100000.
+              Puedes escribir 10.000, 10000 o 10.000,50.
             </p>
-
           </div>
 
+          {/* IVA */}
           <div className="mt-5">
-
             <label className="mb-2 block text-sm font-semibold">
               Porcentaje de IVA
             </label>
 
             <div className="relative">
-
               <input
                 type="text"
                 inputMode="decimal"
@@ -232,38 +235,34 @@ export default function IvaPage() {
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-medium text-slate-500">
                 %
               </span>
-
             </div>
 
             <p className="mt-2 text-sm text-slate-500">
               Para Chile, el IVA general es del 19%.
             </p>
-
           </div>
 
+          {/* BOTÓN LIMPIAR */}
           <div className="mt-6">
-
             <button
               onClick={limpiar}
               className="rounded-xl border px-5 py-3 font-medium transition hover:bg-slate-50"
             >
               Limpiar
             </button>
-
           </div>
 
+          {/* RESULTADO */}
           {hayResultado && (
             <div className="mt-8">
-
               <div className="rounded-2xl bg-slate-900 p-6 text-white">
-
                 <p className="text-sm text-slate-300">
                   {modo === "agregar"
                     ? "Precio final con IVA"
                     : "Precio sin IVA"}
                 </p>
 
-                <p className="mt-2 text-4xl font-bold sm:text-5xl">
+                <p className="mt-2 break-words text-4xl font-bold sm:text-5xl">
                   ${formatoPesos(precioFinal)}
                 </p>
 
@@ -279,13 +278,11 @@ export default function IvaPage() {
                     ? "✓ Copiado"
                     : "Copiar resultado"}
                 </button>
-
               </div>
 
+              {/* DETALLE */}
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-
                 <div className="rounded-xl border p-5">
-
                   <p className="text-sm text-slate-500">
                     Precio sin IVA
                   </p>
@@ -293,23 +290,19 @@ export default function IvaPage() {
                   <p className="mt-2 text-2xl font-bold">
                     ${formatoPesos(precioBase)}
                   </p>
-
                 </div>
 
                 <div className="rounded-xl border p-5">
-
                   <p className="text-sm text-slate-500">
-                    IVA ({ivaNumero}%)
+                    IVA ({formatoPesos(ivaNumero)}%)
                   </p>
 
                   <p className="mt-2 text-2xl font-bold">
                     ${formatoPesos(montoIva)}
                   </p>
-
                 </div>
 
                 <div className="rounded-xl border p-5 sm:col-span-2">
-
                   <p className="text-sm text-slate-500">
                     Precio final
                   </p>
@@ -317,18 +310,14 @@ export default function IvaPage() {
                   <p className="mt-2 text-2xl font-bold">
                     ${formatoPesos(precioFinal)}
                   </p>
-
                 </div>
-
               </div>
-
             </div>
           )}
-
         </section>
 
+        {/* EXPLICACIÓN */}
         <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
-
           <h2 className="text-xl font-bold">
             ¿Cómo calcular el IVA en Chile?
           </h2>
@@ -346,11 +335,10 @@ export default function IvaPage() {
           <div className="mt-4 rounded-xl bg-slate-100 p-4 font-mono">
             Precio final = precio + IVA
           </div>
-
         </section>
 
+        {/* EJEMPLO */}
         <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
-
           <h2 className="text-xl font-bold">
             Ejemplo: IVA de $10.000
           </h2>
@@ -367,11 +355,10 @@ export default function IvaPage() {
           <div className="mt-4 rounded-xl bg-slate-100 p-4 font-mono">
             $10.000 + $1.900 = $11.900
           </div>
-
         </section>
 
+        {/* ENLACES */}
         <div className="mt-8 flex flex-wrap justify-center gap-5 text-sm">
-
           <a
             href="/porcentaje"
             className="font-medium text-blue-600 hover:underline"
@@ -392,19 +379,15 @@ export default function IvaPage() {
           >
             Calculadora de edad
           </a>
-
         </div>
-
       </div>
 
+      {/* FOOTER */}
       <footer className="mt-10 border-t bg-white">
-
         <div className="mx-auto max-w-6xl px-5 py-8 text-center text-sm text-slate-500">
           Herramientas Gratis · Herramientas online gratuitas
         </div>
-
       </footer>
-
     </main>
   );
 }

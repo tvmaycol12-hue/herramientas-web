@@ -29,7 +29,8 @@ const herramientas = [
   },
   {
     nombre: "Calculadora de préstamos",
-    descripcion: "Calcula cuotas, intereses y el total de un préstamo.",
+    descripcion:
+      "Calcula la cuota mensual, los intereses y el total que pagarás.",
     categoria: "Dinero",
     ruta: "/prestamos",
     disponible: true,
@@ -139,7 +140,7 @@ export default function Home() {
               {herramienta.disponible ? (
                 <a
                   href={herramienta.ruta}
-                  className="mt-6 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                  className="mt-6 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
                 >
                   Usar herramienta →
                 </a>

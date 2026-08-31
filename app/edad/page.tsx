@@ -2,31 +2,52 @@
 
 import { useState } from "react";
 
+type ResultadoEdad = {
+  años: number;
+  meses: number;
+  dias: number;
+  totalDias: number;
+  totalSemanas: number;
+  totalMeses: number;
+  proximoCumple: Date;
+  diasParaCumple: number;
+};
+
 export default function EdadPage() {
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [fechaCalculo, setFechaCalculo] = useState("");
-  const [resultado, setResultado] = useState<{
-    años: number;
-    meses: number;
-    dias: number;
-    totalDias: number;
-    totalSemanas: number;
-    totalMeses: number;
-    proximoCumple: Date;
-    diasParaCumple: number;
-  } | null>(null);
+  const [resultado, setResultado] = useState<ResultadoEdad | null>(null);
+  const [error, setError] = useState("");
+
+  const crearFecha = (fecha: string) => {
+    const [año, mes, dia] = fecha.split("-").map(Number);
+
+    return new Date(año, mes - 1, dia);
+  };
 
   const calcularEdad = () => {
-    if (!fechaNacimiento) return;
+    setError("");
+    setResultado(null);
 
-    const nacimiento = new Date(`${fechaNacimiento}T00:00:00`);
+    if (!fechaNacimiento) {
+      setError("Debes ingresar tu fecha de nacimiento.");
+      return;
+    }
+
+    const nacimiento = crearFecha(fechaNacimiento);
 
     const hoy = fechaCalculo
-      ? new Date(`${fechaCalculo}T00:00:00`)
+      ? crearFecha(fechaCalculo)
       : new Date();
 
+    // Eliminamos la hora para que el cálculo sea exacto por día.
+    hoy.setHours(0, 0, 0, 0);
+    nacimiento.setHours(0, 0, 0, 0);
+
     if (nacimiento > hoy) {
-      setResultado(null);
+      setError(
+        "La fecha de nacimiento no puede ser posterior a la fecha de cálculo."
+      );
       return;
     }
 
@@ -62,19 +83,36 @@ export default function EdadPage() {
 
     const totalMeses = años * 12 + meses;
 
-    const cumpleañosEsteAño = new Date(
-      hoy.getFullYear(),
+    // Próximo cumpleaños
+    let añoCumpleaños = hoy.getFullYear();
+
+    let proximoCumple = new Date(
+      añoCumpleaños,
       nacimiento.getMonth(),
       nacimiento.getDate()
     );
 
-    let proximoCumple = cumpleañosEsteAño;
+    // Si el cumpleaños ya pasó, buscamos el del próximo año.
+    if (proximoCumple < hoy) {
+      añoCumpleaños++;
 
-    if (cumpleañosEsteAño < hoy) {
       proximoCumple = new Date(
-        hoy.getFullYear() + 1,
+        añoCumpleaños,
         nacimiento.getMonth(),
         nacimiento.getDate()
+      );
+    }
+
+    // Corrección para personas nacidas el 29 de febrero.
+    if (
+      nacimiento.getMonth() === 1 &&
+      nacimiento.getDate() === 29 &&
+      proximoCumple.getMonth() !== 1
+    ) {
+      proximoCumple = new Date(
+        añoCumpleaños,
+        1,
+        28
       );
     }
 
@@ -99,6 +137,7 @@ export default function EdadPage() {
     setFechaNacimiento("");
     setFechaCalculo("");
     setResultado(null);
+    setError("");
   };
 
   const formatearFecha = (fecha: Date) => {
@@ -109,9 +148,26 @@ export default function EdadPage() {
     });
   };
 
+  const cambiarFechaNacimiento = (
+    valor: string
+  ) => {
+    setFechaNacimiento(valor);
+    setResultado(null);
+    setError("");
+  };
+
+  const cambiarFechaCalculo = (
+    valor: string
+  ) => {
+    setFechaCalculo(valor);
+    setResultado(null);
+    setError("");
+  };
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
 
+      {/* HEADER */}
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
 
@@ -132,8 +188,10 @@ export default function EdadPage() {
         </div>
       </header>
 
+      {/* CONTENIDO */}
       <div className="mx-auto max-w-3xl px-5 py-10">
 
+        {/* TÍTULO */}
         <div className="mb-8">
 
           <p className="mb-2 text-sm font-bold uppercase tracking-widest text-blue-600">
@@ -152,12 +210,14 @@ export default function EdadPage() {
 
         </div>
 
+        {/* CALCULADORA */}
         <section className="rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
 
           <h2 className="text-xl font-bold">
             Introduce tus datos
           </h2>
 
+          {/* FECHA NACIMIENTO */}
           <div className="mt-6">
 
             <label className="mb-2 block text-sm font-semibold">
@@ -168,17 +228,19 @@ export default function EdadPage() {
               type="date"
               value={fechaNacimiento}
               onChange={(e) =>
-                setFechaNacimiento(e.target.value)
+                cambiarFechaNacimiento(e.target.value)
               }
               className="w-full rounded-xl border px-4 py-3 text-lg outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
 
           </div>
 
+          {/* FECHA DE CÁLCULO */}
           <div className="mt-5">
 
             <label className="mb-2 block text-sm font-semibold">
               Calcular edad hasta
+
               <span className="ml-2 font-normal text-slate-500">
                 (opcional)
               </span>
@@ -188,7 +250,7 @@ export default function EdadPage() {
               type="date"
               value={fechaCalculo}
               onChange={(e) =>
-                setFechaCalculo(e.target.value)
+                cambiarFechaCalculo(e.target.value)
               }
               className="w-full rounded-xl border px-4 py-3 text-lg outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
@@ -199,6 +261,14 @@ export default function EdadPage() {
 
           </div>
 
+          {/* ERROR */}
+          {error && (
+            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {/* BOTONES */}
           <div className="mt-6 flex flex-wrap gap-3">
 
             <button
@@ -217,9 +287,11 @@ export default function EdadPage() {
 
           </div>
 
+          {/* RESULTADO */}
           {resultado && (
             <div className="mt-8">
 
+              {/* EDAD EXACTA */}
               <div className="rounded-2xl bg-slate-900 p-6 text-white">
 
                 <p className="text-sm text-slate-300">
@@ -237,50 +309,68 @@ export default function EdadPage() {
 
               </div>
 
+              {/* ESTADÍSTICAS */}
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
 
                 <div className="rounded-xl border p-5">
+
                   <p className="text-sm text-slate-500">
                     Edad en meses
                   </p>
 
                   <p className="mt-2 text-2xl font-bold">
-                    {resultado.totalMeses.toLocaleString("es-CL")}
+                    {resultado.totalMeses.toLocaleString(
+                      "es-CL"
+                    )}
                   </p>
+
                 </div>
 
                 <div className="rounded-xl border p-5">
+
                   <p className="text-sm text-slate-500">
                     Edad en semanas
                   </p>
 
                   <p className="mt-2 text-2xl font-bold">
-                    {resultado.totalSemanas.toLocaleString("es-CL")}
+                    {resultado.totalSemanas.toLocaleString(
+                      "es-CL"
+                    )}
                   </p>
+
                 </div>
 
                 <div className="rounded-xl border p-5">
+
                   <p className="text-sm text-slate-500">
                     Edad en días
                   </p>
 
                   <p className="mt-2 text-2xl font-bold">
-                    {resultado.totalDias.toLocaleString("es-CL")}
+                    {resultado.totalDias.toLocaleString(
+                      "es-CL"
+                    )}
                   </p>
+
                 </div>
 
                 <div className="rounded-xl border p-5">
+
                   <p className="text-sm text-slate-500">
                     Próximo cumpleaños
                   </p>
 
                   <p className="mt-2 text-lg font-bold capitalize">
-                    {formatearFecha(resultado.proximoCumple)}
+                    {formatearFecha(
+                      resultado.proximoCumple
+                    )}
                   </p>
+
                 </div>
 
               </div>
 
+              {/* PRÓXIMO CUMPLEAÑOS */}
               <div className="mt-5 rounded-2xl border bg-blue-50 p-6">
 
                 <p className="text-sm font-semibold text-blue-700">
@@ -288,7 +378,9 @@ export default function EdadPage() {
                 </p>
 
                 <p className="mt-2 text-2xl font-bold">
-                  Faltan {resultado.diasParaCumple} días
+                  {resultado.diasParaCumple === 0
+                    ? "¡Es hoy! 🎉"
+                    : `Faltan ${resultado.diasParaCumple} días`}
                 </p>
 
               </div>
@@ -298,6 +390,7 @@ export default function EdadPage() {
 
         </section>
 
+        {/* EXPLICACIÓN */}
         <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
 
           <h2 className="text-xl font-bold">
@@ -317,6 +410,7 @@ export default function EdadPage() {
 
         </section>
 
+        {/* INFORMACIÓN */}
         <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
 
           <h2 className="text-xl font-bold">
@@ -331,19 +425,35 @@ export default function EdadPage() {
 
         </section>
 
-        <div className="mt-8 text-center">
+        {/* ENLACES */}
+        <div className="mt-8 flex flex-wrap justify-center gap-5 text-sm">
 
           <a
-            href="/"
+            href="/porcentaje"
             className="font-medium text-blue-600 hover:underline"
           >
-            ← Ver todas las herramientas
+            Calculadora de porcentaje
+          </a>
+
+          <a
+            href="/descuento"
+            className="font-medium text-blue-600 hover:underline"
+          >
+            Calculadora de descuentos
+          </a>
+
+          <a
+            href="/iva"
+            className="font-medium text-blue-600 hover:underline"
+          >
+            Calculadora de IVA
           </a>
 
         </div>
 
       </div>
 
+      {/* FOOTER */}
       <footer className="mt-10 border-t bg-white">
 
         <div className="mx-auto max-w-6xl px-5 py-8 text-center text-sm text-slate-500">
