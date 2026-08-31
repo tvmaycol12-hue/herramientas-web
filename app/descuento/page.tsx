@@ -7,40 +7,55 @@ export default function DescuentoPage() {
   const [descuento, setDescuento] = useState("");
   const [copiado, setCopiado] = useState(false);
 
-  const precioNumero = Number(precio);
-  const descuentoNumero = Number(descuento);
+  // Convierte:
+  // 10.000 -> 10000
+  // 100.000 -> 100000
+  // 1.500.000 -> 1500000
+  const convertirNumero = (valor: string) => {
+    const limpio = valor.replace(/\./g, "").replace(/,/g, ".");
+    return Number(limpio);
+  };
 
-  let ahorro: number | null = null;
-  let precioFinal: number | null = null;
+  const precioNumero = convertirNumero(precio);
+  const descuentoNumero = convertirNumero(descuento);
+
+  let montoDescuento = 0;
+  let precioFinal = 0;
 
   if (
     precio !== "" &&
     descuento !== "" &&
-    precioNumero >= 0 &&
+    !isNaN(precioNumero) &&
+    !isNaN(descuentoNumero) &&
     descuentoNumero >= 0
   ) {
-    ahorro = (precioNumero * descuentoNumero) / 100;
-    precioFinal = precioNumero - ahorro;
+    montoDescuento =
+      precioNumero * (descuentoNumero / 100);
+
+    precioFinal =
+      precioNumero - montoDescuento;
   }
 
-  const formatearNumero = (numero: number) => {
-    return new Intl.NumberFormat("es-CL", {
+  const hayResultado =
+    precio !== "" &&
+    descuento !== "" &&
+    !isNaN(precioNumero) &&
+    !isNaN(descuentoNumero) &&
+    descuentoNumero >= 0;
+
+  const formatoPesos = (numero: number) => {
+    return numero.toLocaleString("es-CL", {
+      minimumFractionDigits: 0,
       maximumFractionDigits: 2,
-    }).format(numero);
+    });
   };
 
   const copiarResultado = async () => {
-    if (precioFinal === null) return;
+    if (!hayResultado) return;
 
-    const texto = `Precio original: ${formatearNumero(
-      precioNumero
-    )}\nDescuento: ${formatearNumero(
-      descuentoNumero
-    )}%\nAhorras: ${formatearNumero(
-      ahorro ?? 0
-    )}\nPrecio final: ${formatearNumero(precioFinal)}`;
-
-    await navigator.clipboard.writeText(texto);
+    await navigator.clipboard.writeText(
+      `$${formatoPesos(precioFinal)}`
+    );
 
     setCopiado(true);
 
@@ -71,7 +86,7 @@ export default function DescuentoPage() {
 
           <a
             href="/"
-            className="text-sm font-medium text-slate-600 transition hover:text-blue-600"
+            className="text-sm font-medium text-slate-600 hover:text-blue-600"
           >
             ← Inicio
           </a>
@@ -90,12 +105,12 @@ export default function DescuentoPage() {
           </p>
 
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Calculadora de descuento
+            Calculadora de descuentos
           </h1>
 
           <p className="mt-4 text-lg leading-7 text-slate-600">
-            Calcula cuánto dinero ahorrarás y cuál será el precio final
-            después de aplicar un descuento.
+            Calcula cuánto dinero ahorras y cuál será el precio
+            final después de aplicar un descuento.
           </p>
 
         </div>
@@ -107,150 +122,164 @@ export default function DescuentoPage() {
             Calcula tu descuento
           </h2>
 
-          {/* CAMPOS */}
-          <div className="mt-6 grid gap-5 sm:grid-cols-2">
+          {/* PRECIO */}
+          <div className="mt-6">
 
-            {/* PRECIO */}
-            <div>
+            <label className="mb-2 block text-sm font-semibold">
+              Precio original
+            </label>
 
-              <label className="mb-2 block text-sm font-semibold">
-                Precio original
-              </label>
+            <div className="relative">
 
-              <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-medium text-slate-500">
+                $
+              </span>
 
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
-                  $
-                </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={precio}
+                onChange={(e) => {
+                  const valor = e.target.value;
 
-                <input
-                  type="number"
-                  min="0"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  placeholder="Ej: 50000"
-                  className="w-full rounded-xl border py-3 pl-9 pr-4 text-lg outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-
-              </div>
+                  if (/^[0-9.,]*$/.test(valor)) {
+                    setPrecio(valor);
+                    setCopiado(false);
+                  }
+                }}
+                placeholder="Ej: 10.000"
+                className="w-full rounded-xl border py-3 pl-9 pr-4 text-lg outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
 
             </div>
 
-            {/* DESCUENTO */}
-            <div>
+            <p className="mt-2 text-sm text-slate-500">
+              Puedes escribir valores como 10.000 o 100000.
+            </p>
 
-              <label className="mb-2 block text-sm font-semibold">
-                Porcentaje de descuento
-              </label>
+          </div>
 
-              <div className="relative">
+          {/* DESCUENTO */}
+          <div className="mt-5">
 
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={descuento}
-                  onChange={(e) => setDescuento(e.target.value)}
-                  placeholder="Ej: 20"
-                  className="w-full rounded-xl border px-4 py-3 pr-10 text-lg outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
+            <label className="mb-2 block text-sm font-semibold">
+              Porcentaje de descuento
+            </label>
 
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
-                  %
-                </span>
+            <div className="relative">
 
-              </div>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={descuento}
+                onChange={(e) => {
+                  const valor = e.target.value;
+
+                  if (/^[0-9.,]*$/.test(valor)) {
+                    setDescuento(valor);
+                    setCopiado(false);
+                  }
+                }}
+                placeholder="Ej: 20"
+                className="w-full rounded-xl border px-4 py-3 pr-12 text-lg outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-medium text-slate-500">
+                %
+              </span>
 
             </div>
 
           </div>
 
           {/* BOTÓN LIMPIAR */}
-          <button
-            onClick={limpiar}
-            className="mt-6 rounded-xl border px-5 py-3 font-medium transition hover:bg-slate-50"
-          >
-            Limpiar
-          </button>
+          <div className="mt-6">
+
+            <button
+              onClick={limpiar}
+              className="rounded-xl border px-5 py-3 font-medium transition hover:bg-slate-50"
+            >
+              Limpiar
+            </button>
+
+          </div>
 
           {/* RESULTADO */}
-          {precioFinal !== null && ahorro !== null && (
-            <div className="mt-8 rounded-2xl bg-slate-900 p-6 text-white">
+          {hayResultado && (
+            <div className="mt-8">
 
-              <p className="text-sm text-slate-300">
-                Precio final
-              </p>
+              <div className="rounded-2xl bg-slate-900 p-6 text-white">
 
-              <p className="mt-2 text-4xl font-bold sm:text-5xl">
-                ${formatearNumero(precioFinal)}
-              </p>
+                <p className="text-sm text-slate-300">
+                  Precio final
+                </p>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <p className="mt-2 text-4xl font-bold sm:text-5xl">
+                  ${formatoPesos(precioFinal)}
+                </p>
 
-                <div className="rounded-xl bg-white/10 p-4">
+                <p className="mt-4 text-sm text-slate-300">
+                  Ahorras: ${formatoPesos(montoDescuento)}
+                </p>
 
-                  <p className="text-sm text-slate-300">
+                <button
+                  onClick={copiarResultado}
+                  className="mt-5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                >
+                  {copiado
+                    ? "✓ Copiado"
+                    : "Copiar resultado"}
+                </button>
+
+              </div>
+
+              {/* DETALLE */}
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+
+                <div className="rounded-xl border p-5">
+
+                  <p className="text-sm text-slate-500">
                     Precio original
                   </p>
 
-                  <p className="mt-1 text-xl font-semibold">
-                    ${formatearNumero(precioNumero)}
+                  <p className="mt-2 text-2xl font-bold">
+                    ${formatoPesos(precioNumero)}
                   </p>
 
                 </div>
 
-                <div className="rounded-xl bg-white/10 p-4">
+                <div className="rounded-xl border p-5">
 
-                  <p className="text-sm text-slate-300">
-                    Ahorras
+                  <p className="text-sm text-slate-500">
+                    Descuento ({descuentoNumero}%)
                   </p>
 
-                  <p className="mt-1 text-xl font-semibold">
-                    ${formatearNumero(ahorro)}
+                  <p className="mt-2 text-2xl font-bold">
+                    ${formatoPesos(montoDescuento)}
+                  </p>
+
+                </div>
+
+                <div className="rounded-xl border p-5 sm:col-span-2">
+
+                  <p className="text-sm text-slate-500">
+                    Precio final
+                  </p>
+
+                  <p className="mt-2 text-2xl font-bold">
+                    ${formatoPesos(precioFinal)}
                   </p>
 
                 </div>
 
               </div>
 
-              <button
-                onClick={copiarResultado}
-                className="mt-6 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-              >
-                {copiado ? "✓ Resultado copiado" : "Copiar resultado"}
-              </button>
-
             </div>
           )}
 
         </section>
 
-        {/* EJEMPLOS */}
-        <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
-
-          <h2 className="text-xl font-bold">
-            Ejemplo de cálculo
-          </h2>
-
-          <p className="mt-4 leading-7 text-slate-600">
-            Si un producto cuesta $50.000 y tiene un descuento del 20%:
-          </p>
-
-          <div className="mt-5 space-y-3">
-
-            <div className="rounded-xl bg-slate-100 p-4 font-mono">
-              Descuento: $50.000 × 20% = $10.000
-            </div>
-
-            <div className="rounded-xl bg-slate-100 p-4 font-mono">
-              Precio final: $50.000 − $10.000 = $40.000
-            </div>
-
-          </div>
-
-        </section>
-
-        {/* PREGUNTAS */}
+        {/* EXPLICACIÓN */}
         <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
 
           <h2 className="text-xl font-bold">
@@ -258,34 +287,65 @@ export default function DescuentoPage() {
           </h2>
 
           <p className="mt-4 leading-7 text-slate-600">
-            Para calcular cuánto representa un descuento, multiplica el
-            precio original por el porcentaje de descuento y divide entre
-            100.
+            Para calcular cuánto dinero corresponde al descuento,
+            multiplica el precio original por el porcentaje de
+            descuento y divide el resultado entre 100.
           </p>
 
           <div className="mt-5 rounded-xl bg-slate-100 p-4 font-mono">
-            Precio × descuento ÷ 100 = ahorro
+            Descuento = precio × porcentaje ÷ 100
           </div>
 
-          <p className="mt-5 leading-7 text-slate-600">
-            Después, resta el ahorro al precio original para obtener el
-            precio final.
-          </p>
-
-          <div className="mt-3 rounded-xl bg-slate-100 p-4 font-mono">
-            Precio original − ahorro = precio final
+          <div className="mt-4 rounded-xl bg-slate-100 p-4 font-mono">
+            Precio final = precio − descuento
           </div>
 
         </section>
 
-        {/* VOLVER */}
-        <div className="mt-8 text-center">
+        {/* EJEMPLO */}
+        <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
+
+          <h2 className="text-xl font-bold">
+            Ejemplo: 20% de descuento en $10.000
+          </h2>
+
+          <p className="mt-4 leading-7 text-slate-600">
+            Si un producto cuesta $10.000 y tiene un descuento
+            del 20%, ahorrarás $2.000 y pagarás $8.000.
+          </p>
+
+          <div className="mt-5 rounded-xl bg-slate-100 p-4 font-mono">
+            $10.000 × 20% = $2.000
+          </div>
+
+          <div className="mt-4 rounded-xl bg-slate-100 p-4 font-mono">
+            $10.000 − $2.000 = $8.000
+          </div>
+
+        </section>
+
+        {/* ENLACES */}
+        <div className="mt-8 flex flex-wrap justify-center gap-5 text-sm">
 
           <a
-            href="/"
+            href="/porcentaje"
             className="font-medium text-blue-600 hover:underline"
           >
-            ← Ver todas las herramientas
+            Calculadora de porcentaje
+          </a>
+
+          <a
+            href="/iva"
+            className="font-medium text-blue-600 hover:underline"
+          >
+            Calculadora de IVA
+          </a>
+
+          <a
+            href="/edad"
+            className="font-medium text-blue-600 hover:underline"
+          >
+            Calculadora de edad
           </a>
 
         </div>

@@ -10,8 +10,17 @@ export default function IvaPage() {
   const [iva, setIva] = useState("19");
   const [copiado, setCopiado] = useState(false);
 
-  const precioNumero = Number(precio);
-  const ivaNumero = Number(iva);
+  // Convierte valores como:
+  // 10.000 -> 10000
+  // 100.000 -> 100000
+  // 1.500.000 -> 1500000
+  const convertirNumero = (valor: string) => {
+    const limpio = valor.replace(/\./g, "").replace(/,/g, ".");
+    return Number(limpio);
+  };
+
+  const precioNumero = convertirNumero(precio);
+  const ivaNumero = convertirNumero(iva);
 
   let precioFinal = 0;
   let montoIva = 0;
@@ -70,7 +79,6 @@ export default function IvaPage() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
 
-      {/* HEADER */}
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
 
@@ -91,10 +99,8 @@ export default function IvaPage() {
         </div>
       </header>
 
-      {/* CONTENIDO */}
       <div className="mx-auto max-w-3xl px-5 py-10">
 
-        {/* TÍTULO */}
         <div className="mb-8">
 
           <p className="mb-2 text-sm font-bold uppercase tracking-widest text-blue-600">
@@ -112,14 +118,12 @@ export default function IvaPage() {
 
         </div>
 
-        {/* CALCULADORA */}
         <section className="rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
 
           <h2 className="text-xl font-bold">
             Calcula tu IVA
           </h2>
 
-          {/* MODOS */}
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
 
             <button
@@ -164,7 +168,6 @@ export default function IvaPage() {
 
           </div>
 
-          {/* PRECIO */}
           <div className="mt-6">
 
             <label className="mb-2 block text-sm font-semibold">
@@ -180,22 +183,29 @@ export default function IvaPage() {
               </span>
 
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={precio}
                 onChange={(e) => {
-                  setPrecio(e.target.value);
-                  setCopiado(false);
+                  const valor = e.target.value;
+
+                  if (/^[0-9.,]*$/.test(valor)) {
+                    setPrecio(valor);
+                    setCopiado(false);
+                  }
                 }}
-                placeholder="Ej: 10000"
+                placeholder="Ej: 10.000"
                 className="w-full rounded-xl border py-3 pl-9 pr-4 text-lg outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
 
             </div>
 
+            <p className="mt-2 text-sm text-slate-500">
+              Puedes escribir valores como 10.000 o 100000.
+            </p>
+
           </div>
 
-          {/* IVA */}
           <div className="mt-5">
 
             <label className="mb-2 block text-sm font-semibold">
@@ -205,12 +215,16 @@ export default function IvaPage() {
             <div className="relative">
 
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={iva}
                 onChange={(e) => {
-                  setIva(e.target.value);
-                  setCopiado(false);
+                  const valor = e.target.value;
+
+                  if (/^[0-9.,]*$/.test(valor)) {
+                    setIva(valor);
+                    setCopiado(false);
+                  }
                 }}
                 className="w-full rounded-xl border px-4 py-3 pr-12 text-lg outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
@@ -227,7 +241,6 @@ export default function IvaPage() {
 
           </div>
 
-          {/* BOTÓN LIMPIAR */}
           <div className="mt-6">
 
             <button
@@ -239,7 +252,6 @@ export default function IvaPage() {
 
           </div>
 
-          {/* RESULTADO */}
           {hayResultado && (
             <div className="mt-8">
 
@@ -270,7 +282,6 @@ export default function IvaPage() {
 
               </div>
 
-              {/* DETALLE */}
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
 
                 <div className="rounded-xl border p-5">
@@ -316,7 +327,6 @@ export default function IvaPage() {
 
         </section>
 
-        {/* EXPLICACIÓN */}
         <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
 
           <h2 className="text-xl font-bold">
@@ -339,7 +349,6 @@ export default function IvaPage() {
 
         </section>
 
-        {/* EJEMPLO */}
         <section className="mt-8 rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
 
           <h2 className="text-xl font-bold">
@@ -361,7 +370,6 @@ export default function IvaPage() {
 
         </section>
 
-        {/* ENLACES */}
         <div className="mt-8 flex flex-wrap justify-center gap-5 text-sm">
 
           <a
@@ -389,7 +397,6 @@ export default function IvaPage() {
 
       </div>
 
-      {/* FOOTER */}
       <footer className="mt-10 border-t bg-white">
 
         <div className="mx-auto max-w-6xl px-5 py-8 text-center text-sm text-slate-500">
