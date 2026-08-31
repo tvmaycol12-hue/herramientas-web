@@ -13,25 +13,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://herramientasgratis.cl"),
-
   title: {
     default: "Herramientas Gratis | Calculadoras Online",
     template: "%s | Herramientas Gratis",
   },
 
   description:
-    "Calculadoras online gratuitas, rápidas y fáciles de usar. Calcula porcentajes, descuentos, edad, IVA, préstamos y mucho más.",
+    "Calculadoras y herramientas online gratuitas para porcentajes, descuentos, edad, IVA, préstamos y mucho más.",
 
   keywords: [
     "calculadora online",
     "calculadoras gratis",
-    "herramientas online",
     "calculadora de porcentaje",
     "calculadora de descuento",
     "calculadora de edad",
     "calculadora de IVA",
     "calculadora de préstamos",
+    "herramientas online",
   ],
 
   authors: [
@@ -50,17 +48,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Herramientas Gratis | Calculadoras Online",
     description:
-      "Calculadoras online gratuitas, rápidas y fáciles de usar.",
+      "Calculadoras y herramientas online gratuitas, rápidas y fáciles de usar.",
     type: "website",
     locale: "es_CL",
-    siteName: "Herramientas Gratis",
-  },
-
-  twitter: {
-    card: "summary",
-    title: "Herramientas Gratis | Calculadoras Online",
-    description:
-      "Calculadoras online gratuitas, rápidas y fáciles de usar.",
   },
 };
 
@@ -71,9 +61,17 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es-CL"
+      lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6639069224961716"
+          crossOrigin="anonymous"
+        />
+      </head>
+
       <body className="min-h-full flex flex-col">
         {children}
       </body>
