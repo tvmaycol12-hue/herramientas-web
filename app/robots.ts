@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://TU-DOMINIO.com/sitemap.xml",
+    sitemap: "https://herramientas-web-lovat.vercel.app/sitemap.xml",
   };
 }
